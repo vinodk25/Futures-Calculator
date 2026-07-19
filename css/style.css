@@ -266,6 +266,88 @@ button.danger{background:transparent;border:1px solid var(--red);color:var(--red
 }
 .rr-table th{color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase;}
 canvas{width:100%;height:auto;background:var(--card2);border-radius:10px;}
+.calc-grid{
+  display:block;
+}
+.calc-col{display:block;}
+
+/* ===================== DESKTOP LAYOUT (fit one screen) ===================== */
+@media (min-width:900px){
+  body{
+    height:100vh;
+    overflow:hidden;
+    padding-bottom:0;
+    display:flex;
+    flex-direction:column;
+  }
+  header{padding:10px 20px;flex:0 0 auto;}
+  .logo{width:34px;height:34px;}
+  header h1{font-size:14px;}
+  header p{font-size:10px;}
+  .tabs{padding:6px 16px 0;flex:0 0 auto;}
+  .tab{padding:7px 14px;font-size:12px;}
+
+  main.container{
+    max-width:1400px;
+    width:100%;
+    flex:1 1 auto;
+    overflow:hidden;
+    padding:10px 16px;
+  }
+
+  #tab-calc, #tab-journal, #tab-stats, #tab-risk, #tab-specs{
+    height:100%;
+    overflow:hidden;
+  }
+
+  .calc-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+    height:100%;
+  }
+  .calc-col{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    overflow-y:auto;
+    padding-right:4px;
+  }
+
+  .card{padding:11px 14px;margin-bottom:0;}
+  .card h2{font-size:11.5px;margin:0 0 8px;}
+  label{margin:6px 0 3px;font-size:11px;}
+  label.mt{margin-top:8px;}
+  input, select{padding:7px 9px;font-size:13px;}
+  .pill{padding:6px 4px;font-size:11.5px;}
+  .toggle2 .opt{padding:8px;font-size:12px;}
+  .highlight{padding:8px 10px;margin-top:6px;}
+  .highlight .lotval{font-size:22px;}
+  .result-row{padding:5px 0;font-size:12px;}
+  .subhead{margin:8px 0 4px;font-size:11px;}
+  .rr-table{font-size:11px;}
+  .rr-table th, .rr-table td{padding:4px 4px;}
+  button.primary{padding:9px;margin-top:8px;font-size:12.5px;}
+
+  /* Journal tab: two-column layout with scrollable list */
+  #tab-journal .card{height:100%;display:flex;flex-direction:column;}
+  #journalList{flex:1 1 auto;overflow-y:auto;}
+
+  /* Stats tab: side-by-side summary + chart */
+  #tab-stats{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+  }
+  #tab-stats .card{margin-bottom:0;height:100%;overflow-y:auto;}
+  .stat-grid{grid-template-columns:1fr 1fr 1fr;}
+
+  #tab-risk .card, #tab-specs .card{max-height:100%;overflow-y:auto;}
+
+  .journal-entry{padding:9px;margin-bottom:7px;}
+  .je-meta{font-size:10.5px;}
+}
+
 .toast{
   position:fixed;
   bottom:20px;
