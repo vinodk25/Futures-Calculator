@@ -2,893 +2,265 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MNQ Command Desk</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+<title>GC/MGC Futures Calculator</title>
+<meta name="description" content="Offline futures risk & lot size calculator for GC/MGC with journal and analytics">
+<meta name="theme-color" content="#0f1115">
+
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#0a0e14">
-<style>
-  :root{
-    --bg1:#0a0e14; --bg2:#111827; --panel:#141a24; --panel2:#171f2b;
-    --border:#232d3d; --text:#e6ebf2; --sub:#8a96a8;
-    --accent:#00e5c7; --accent2:#00b8a3;
-    --green:#3ddc84; --red:#ff5568; --yellow:#ffc857;
-    --glow: 0 0 24px rgba(0,229,199,.45);
-  }
-  *{box-sizing:border-box; margin:0; padding:0;}
-  body{
-    font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
-    background: radial-gradient(circle at 20% 0%, #0f1520 0%, var(--bg1) 45%, #05070a 100%);
-    color:var(--text); min-height:100vh; overflow-x:hidden;
-  }
-  #desktopOnly{display:none; height:100vh; align-items:center; justify-content:center; text-align:center; padding:40px;}
-  #desktopOnly h1{font-size:28px; color:var(--accent); margin-bottom:12px;}
-  #desktopOnly p{color:var(--sub); max-width:420px;}
-  @media (max-width:1099px){
-    #app{display:none !important;}
-    #desktopOnly{display:flex !important;}
-  }
-
-  /* Ticker */
-  .ticker-wrap{
-    width:100%; overflow:hidden; background:#0d1219; border-bottom:1px solid var(--border);
-    white-space:nowrap; padding:6px 0;
-  }
-  .ticker{display:inline-block; padding-left:100%; animation:ticker 28s linear infinite;}
-  .ticker span{margin-right:48px; font-size:12px; letter-spacing:1px; color:var(--sub);}
-  .ticker span b{color:var(--accent);}
-  @keyframes ticker{ 0%{transform:translateX(0);} 100%{transform:translateX(-100%);} }
-
-  header{
-    display:flex; align-items:center; justify-content:space-between;
-    padding:18px 28px; border-bottom:1px solid var(--border);
-  }
-  header h1{font-size:20px; font-weight:700; letter-spacing:.5px;}
-  header h1 span{color:var(--accent);}
-  .firm-select{display:flex; gap:8px;}
-  .firm-btn{
-    background:var(--panel); border:1px solid var(--border); color:var(--sub);
-    padding:8px 14px; border-radius:8px; cursor:pointer; font-size:12px; font-weight:600;
-    transition:.15s;
-  }
-  .firm-btn.active{background:var(--accent); color:#00201b; border-color:var(--accent);}
-
-  .tabs{display:flex; gap:6px; padding:0 28px; border-bottom:1px solid var(--border);}
-  .tab{
-    padding:12px 18px; color:var(--sub); cursor:pointer; font-size:13px; font-weight:600;
-    border-bottom:2px solid transparent;
-  }
-  .tab.active{color:var(--accent); border-color:var(--accent);}
-
-  main{padding:24px 28px 60px; max-width:1500px; margin:0 auto;}
-  .grid{display:grid; grid-template-columns:1.1fr 1fr; gap:20px;}
-  .panel{
-    background:linear-gradient(180deg, var(--panel), var(--panel2));
-    border:1px solid var(--border); border-radius:14px; padding:20px;
-    animation:fadeIn .5s ease both;
-  }
-  @keyframes fadeIn{from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:translateY(0);}}
-  .panel h2{font-size:13px; text-transform:uppercase; letter-spacing:1px; color:var(--sub); margin-bottom:14px;}
-
-  .row{display:flex; gap:12px; margin-bottom:12px;}
-  .field{flex:1; display:flex; flex-direction:column; gap:6px;}
-  .field label{font-size:11px; color:var(--sub); text-transform:uppercase; letter-spacing:.5px;}
-  input[type=number], input[type=text], select{
-    background:#0c1119; border:1px solid var(--border); color:var(--text);
-    padding:10px 12px; border-radius:8px; font-size:14px; width:100%;
-  }
-  input:focus, select:focus{outline:none; border-color:var(--accent);}
-  .presets{display:flex; gap:6px; flex-wrap:wrap; margin-top:6px;}
-  .preset-btn{
-    background:#0c1119; border:1px solid var(--border); color:var(--sub);
-    padding:5px 10px; border-radius:6px; font-size:11px; cursor:pointer;
-  }
-  .preset-btn.active{background:var(--accent); color:#00201b; border-color:var(--accent);}
-  .toggle-group{display:flex; border:1px solid var(--border); border-radius:8px; overflow:hidden;}
-  .toggle-btn{flex:1; padding:10px; text-align:center; cursor:pointer; font-weight:700; font-size:13px; color:var(--sub); background:#0c1119;}
-  .toggle-btn.long.active{background:rgba(61,220,132,.15); color:var(--green);}
-  .toggle-btn.short.active{background:rgba(255,85,104,.15); color:var(--red);}
-
-  details{margin-top:10px; border-top:1px solid var(--border); padding-top:10px;}
-  summary{cursor:pointer; font-size:12px; color:var(--accent); font-weight:600; letter-spacing:.5px;}
-
-  .hero{
-    text-align:center; padding:18px 0 8px;
-  }
-  .hero .label{font-size:12px; color:var(--sub); letter-spacing:1px; text-transform:uppercase;}
-  .hero .value{
-    font-size:56px; font-weight:800; color:var(--accent);
-    text-shadow:var(--glow); animation:pulse 2.4s ease-in-out infinite;
-  }
-  @keyframes pulse{0%,100%{text-shadow:0 0 18px rgba(0,229,199,.35);} 50%{text-shadow:0 0 30px rgba(0,229,199,.65);}}
-
-  .stat-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:14px;}
-  .stat{background:#0c1119; border:1px solid var(--border); border-radius:10px; padding:12px;}
-  .stat .l{font-size:10px; color:var(--sub); text-transform:uppercase; letter-spacing:.5px;}
-  .stat .v{font-size:18px; font-weight:700; margin-top:4px;}
-  .v.pos{color:var(--green);} .v.neg{color:var(--red);}
-
-  .risk-band{
-    margin-top:14px; padding:10px 14px; border-radius:8px; font-weight:700; font-size:13px; text-align:center;
-  }
-  .risk-green{background:rgba(61,220,132,.15); color:var(--green); border:1px solid var(--green);}
-  .risk-yellow{background:rgba(255,200,87,.15); color:var(--yellow); border:1px solid var(--yellow);}
-  .risk-red{background:rgba(255,85,104,.15); color:var(--red); border:1px solid var(--red);}
-
-  table{width:100%; border-collapse:collapse; margin-top:10px; font-size:13px;}
-  th,td{padding:8px 10px; text-align:right; border-bottom:1px solid var(--border);}
-  th:first-child,td:first-child{text-align:left;}
-  th{color:var(--sub); font-size:11px; text-transform:uppercase;}
-
-  .guard-banner{
-    padding:14px 20px; border-radius:12px; font-weight:700; margin-bottom:18px;
-    display:flex; justify-content:space-between; align-items:center;
-  }
-  .guard-ok{background:rgba(61,220,132,.12); border:1px solid var(--green); color:var(--green);}
-  .guard-stop{background:rgba(255,85,104,.18); border:1px solid var(--red); color:var(--red); animation:blink 1.2s infinite;}
-  @keyframes blink{50%{opacity:.55;}}
-
-  button.primary{
-    background:var(--accent); color:#00201b; border:none; padding:10px 18px;
-    border-radius:8px; font-weight:700; cursor:pointer; font-size:13px;
-  }
-  button.ghost{
-    background:transparent; border:1px solid var(--border); color:var(--sub);
-    padding:10px 16px; border-radius:8px; cursor:pointer; font-size:13px;
-  }
-  .journal-toolbar{display:flex; gap:10px; margin-bottom:14px; flex-wrap:wrap; align-items:center;}
-  .badge{padding:3px 8px; border-radius:6px; font-size:11px; font-weight:700;}
-  .badge.win{background:rgba(61,220,132,.15); color:var(--green);}
-  .badge.loss{background:rgba(255,85,104,.15); color:var(--red);}
-  .badge.be{background:rgba(255,200,87,.15); color:var(--yellow);}
-  .badge.pending{background:rgba(138,150,168,.15); color:var(--sub);}
-  .badge.cancelled{background:rgba(138,150,168,.15); color:var(--sub); text-decoration:line-through;}
-  .badge.long{background:rgba(61,220,132,.15); color:var(--green);}
-  .badge.short{background:rgba(255,85,104,.15); color:var(--red);}
-
-  .trade-card{
-    background:#0c1119; border:1px solid var(--border); border-radius:12px; padding:14px 16px;
-  }
-  .trade-card .tc-top{display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap;}
-  .trade-card .tc-badges{display:flex; gap:6px; margin-bottom:6px;}
-  .trade-card .tc-meta{font-size:12px; color:var(--sub);}
-  .trade-card .tc-right{text-align:right; font-size:12px; color:var(--sub);}
-  .trade-card .tc-pl{font-size:16px; font-weight:800;}
-  .trade-card .tc-notes{font-size:12px; color:var(--sub); margin:8px 0; font-style:italic;}
-  .trade-card .tc-actions{display:flex; gap:6px; flex-wrap:wrap; margin-top:8px;}
-  .tc-btn{
-    border:none; padding:6px 12px; border-radius:6px; font-size:11px; font-weight:700; cursor:pointer;
-  }
-  .tc-btn.win{background:rgba(61,220,132,.18); color:var(--green);}
-  .tc-btn.loss{background:rgba(255,85,104,.18); color:var(--red);}
-  .tc-btn.be{background:rgba(255,200,87,.18); color:var(--yellow);}
-  .tc-btn.cancelled{background:rgba(138,150,168,.18); color:var(--sub);}
-  .tc-btn.ghostsm{background:transparent; border:1px solid var(--border); color:var(--sub);}
-  .tc-btn.active-state{outline:2px solid currentColor;}
-  .tc-btn.del{background:transparent; border:1px solid var(--red); color:var(--red);}
-  .footer-note{color:var(--sub); font-size:11px; text-align:center; margin-top:30px;}
-
-  .live-pl-widget{
-    position:fixed; bottom:18px; right:18px; background:#0c1119; border:1px solid var(--border);
-    border-radius:10px; padding:10px 16px; font-size:11px; color:var(--sub); z-index:50;
-    box-shadow:0 4px 18px rgba(0,0,0,.4);
-  }
-  .live-pl-widget .lbl{text-transform:uppercase; letter-spacing:.5px; font-size:10px;}
-  .live-pl-widget .vals{font-size:15px; font-weight:800; margin-top:2px;}
-  ::-webkit-scrollbar{width:8px; height:8px;}
-  ::-webkit-scrollbar-thumb{background:var(--border); border-radius:4px;}
-</style>
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
-<div id="desktopOnly">
-  <div>
-    <h1>Desktop Only</h1>
-    <p>MNQ Command Desk is built for wide screens (≥1100px) so the risk panel, results, and journal can sit side by side. Please open this on a laptop or desktop.</p>
+<header>
+  <div class="brand">
+    <img src="icons/icon-192.png" alt="logo" class="logo">
+    <div>
+      <h1>GC/MGC Futures Calculator</h1>
+      <p>Risk-based lot sizing · Buy/Sell · Journal · Analytics</p>
+    </div>
   </div>
-</div>
+  <button id="themeToggle" class="icon-btn" title="Toggle theme">🌙</button>
+</header>
 
-<div id="app">
-  <div class="ticker-wrap">
-    <div class="ticker" id="tickerTrack"></div>
-  </div>
+<nav class="tabs">
+  <div class="tab active" data-tab="calc">Calculator</div>
+  <div class="tab" data-tab="journal">Journal</div>
+  <div class="tab" data-tab="stats">Stats</div>
+  <div class="tab" data-tab="risk">Risk Guard</div>
+  <div class="tab" data-tab="specs">Specs</div>
+</nav>
 
-  <header>
-    <h1>MNQ <span>Command Desk</span></h1>
-    <div class="firm-select" id="firmSelect"></div>
-  </header>
+<main class="container">
 
-  <div class="tabs" id="tabs">
-    <div class="tab active" data-tab="risk">Risk Calculator</div>
-    <div class="tab" data-tab="journal">Trade Journal</div>
-    <div class="tab" data-tab="guard">Daily Risk Guard</div>
-  </div>
+  <!-- ============ CALCULATOR TAB ============ -->
+  <section id="tab-calc">
+   <div class="calc-grid">
+    <div class="calc-col">
+    <div class="card">
+      <h2>Account & Risk</h2>
+      <label>Account Capital ($)</label>
+      <input type="number" id="capital" value="2000" step="any">
 
-  <main>
-
-    <div id="guardBanner"></div>
-
-    <!-- RISK TAB -->
-    <div id="tab-risk">
-      <div class="grid">
-        <div class="panel">
-          <h2>Position Sizing</h2>
-
-          <div class="row">
-            <div class="field">
-              <label>Account Capital ($)</label>
-              <input type="number" id="capital" value="2000">
-            </div>
-            <div class="field">
-              <label>Direction</label>
-              <div class="toggle-group">
-                <div class="toggle-btn long active" id="btnLong">LONG</div>
-                <div class="toggle-btn short" id="btnShort">SHORT</div>
-              </div>
-            </div>
-          </div>
-
-          <div class="field" style="margin-bottom:12px;">
-            <label>Risk % of Capital</label>
-            <div class="presets" id="riskPresets"></div>
-            <input type="number" id="riskPct" value="1" step="0.1" style="margin-top:8px;">
-          </div>
-
-          <div class="row">
-            <div class="field">
-              <label>Entry Price</label>
-              <input type="number" id="entry" value="20000" step="0.25">
-            </div>
-            <div class="field">
-              <label>Stop Loss Price</label>
-              <input type="number" id="stop" value="19980" step="0.25">
-            </div>
-          </div>
-
-          <div class="field" style="margin-bottom:12px;">
-            <label>Target R:R (auto-fills target price)</label>
-            <div class="presets" id="rrPresets"></div>
-          </div>
-
-          <div class="field" style="margin-bottom:12px;">
-            <label>$ per Point per Contract</label>
-            <div class="presets" id="dollarPresets"></div>
-            <input type="number" id="dollarPerPoint" value="2" step="0.1" style="margin-top:8px;">
-          </div>
-
-          <div class="row">
-            <div class="field">
-              <label>Slippage Buffer (pts)</label>
-              <input type="number" id="slippage" value="1" step="0.25">
-            </div>
-            <div class="field">
-              <label>Fees per Contract Round-Turn ($)</label>
-              <input type="number" id="commission" value="0.74" step="0.01">
-            </div>
-          </div>
-
-          <details>
-            <summary>Advanced — Margin &amp; Costs</summary>
-            <div class="row" style="margin-top:12px;">
-              <div class="field">
-                <label>Leverage / Margin per Contract ($)</label>
-                <input type="number" id="marginPerContract" value="50" step="1">
-              </div>
-              <div class="field">
-                <label>Spread (pts, informational)</label>
-                <input type="number" id="spread" value="0.25" step="0.25">
-              </div>
-            </div>
-            <div class="row">
-              <div class="field">
-                <label>Swap ($/contract/night, informational)</label>
-                <input type="number" id="swap" value="0" step="0.1">
-              </div>
-              <div class="field"></div>
-            </div>
-          </details>
-
-          <details>
-            <summary>Advanced — Partial Close Planner</summary>
-            <div id="partialLegs" style="margin-top:12px;"></div>
-            <button class="ghost" id="addLeg" style="margin-top:8px;">+ Add Leg</button>
-          </details>
-        </div>
-
-        <div class="panel">
-          <h2>Live Results</h2>
-          <div class="hero">
-            <div class="label">Position Size (contracts)</div>
-            <div class="value" id="lotOut">0</div>
-          </div>
-
-          <div class="stat-grid">
-            <div class="stat"><div class="l">Stop Distance</div><div class="v" id="stopDist">-</div></div>
-            <div class="stat"><div class="l">Target Price <span id="rrLabel">(1:1.5)</span></div><div class="v" id="targetPrice">-</div></div>
-            <div class="stat"><div class="l">Target Distance</div><div class="v" id="targetDist">-</div></div>
-            <div class="stat"><div class="l">Potential Loss</div><div class="v neg" id="potLoss">-</div></div>
-            <div class="stat"><div class="l">Potential Profit</div><div class="v pos" id="potProfit">-</div></div>
-            <div class="stat"><div class="l">Margin Required</div><div class="v" id="marginReq">-</div></div>
-            <div class="stat"><div class="l">Free Margin After</div><div class="v" id="freeMargin">-</div></div>
-            <div class="stat"><div class="l">Effective Risk %</div><div class="v" id="effRisk">-</div></div>
-            <div class="stat"><div class="l">Contracts (raw)</div><div class="v" id="rawLots">-</div></div>
-          </div>
-
-          <div class="risk-band" id="riskBand">-</div>
-
-          <h2 style="margin-top:20px;">R:R Snapshot</h2>
-          <table>
-            <thead><tr><th>R:R</th><th>Target Px</th><th>Distance</th><th>Profit</th></tr></thead>
-            <tbody id="rrTable"></tbody>
-          </table>
-
-          <div style="margin-top:16px;">
-            <div class="field" style="margin-bottom:10px;">
-              <label>Trade Notes / Checklist (optional)</label>
-              <input type="text" id="setupNotes" placeholder="e.g. followed full pre-trade checklist">
-            </div>
-            <button class="primary" id="logTradeBtn">Log This Setup to Journal</button>
-          </div>
-        </div>
+      <label>Risk %</label>
+      <div class="pill-group" id="riskPills">
+        <div class="pill" data-risk="2">2%</div>
+        <div class="pill" data-risk="3">3%</div>
+        <div class="pill" data-risk="5">5%</div>
+        <div class="pill" data-risk="10">10%</div>
       </div>
+      <label class="mt">Custom Risk % (overrides above)</label>
+      <input type="number" id="customRisk" placeholder="e.g. 1.5" step="any">
     </div>
 
-    <!-- JOURNAL TAB -->
-    <div id="tab-journal" style="display:none;">
-      <div class="panel" style="margin-bottom:20px;">
-        <h2>Journal Stats</h2>
-        <div class="stat-grid">
-          <div class="stat"><div class="l">Win Rate</div><div class="v" id="statWinRate">-</div></div>
-          <div class="stat"><div class="l">Avg R</div><div class="v" id="statAvgR">-</div></div>
-          <div class="stat"><div class="l">Total P/L</div><div class="v" id="statTotalPL">-</div></div>
-          <div class="stat"><div class="l">Trades</div><div class="v" id="statCount">-</div></div>
-        </div>
-        <h2 style="margin-top:18px;">Equity Curve</h2>
-        <svg id="equityCurve" width="100%" height="160" viewBox="0 0 900 160" preserveAspectRatio="none"></svg>
+    <div class="card">
+      <h2>Instrument & Direction</h2>
+      <label>Contract</label>
+      <div class="pill-group">
+        <div class="pill active wide" id="pillGC" data-instr="GC">GC · 100 oz</div>
+        <div class="pill wide" id="pillMGC" data-instr="MGC">MGC · 10 oz</div>
       </div>
 
-      <div class="panel">
-        <h2>Trade Log</h2>
-        <div class="journal-toolbar">
-          <select id="filterResult">
-            <option value="all">All Results</option>
-            <option value="win">Wins</option>
-            <option value="loss">Losses</option>
-            <option value="be">Breakeven</option>
-            <option value="pending">Pending</option>
-            <option value="cancelled">Cancelled</option>
-          </select>
-          <input type="text" id="filterDate" placeholder="Filter by date (YYYY-MM-DD)">
-          <button class="ghost" id="exportBtn">Export JSON</button>
-          <button class="ghost" id="clearBtn" style="color:var(--red); border-color:var(--red);">Clear Journal</button>
-        </div>
-
-        <details style="margin-bottom:4px;">
-          <summary>+ Add a manual trade entry</summary>
-          <div class="row" style="margin-top:12px;">
-            <div class="field"><label>Entry</label><input type="number" id="jEntry"></div>
-            <div class="field"><label>Stop</label><input type="number" id="jStop"></div>
-            <div class="field"><label>Direction</label>
-              <select id="jDirection"><option value="long">Long</option><option value="short">Short</option></select>
-            </div>
-            <div class="field"><label>Actual P/L ($)</label><input type="number" id="jPL"></div>
-            <div class="field" style="justify-content:flex-end;"><button class="primary" id="addTradeBtn">Add Entry</button></div>
-          </div>
-        </details>
-
-        <div id="journalCards" style="margin-top:14px; display:flex; flex-direction:column; gap:12px;"></div>
+      <label>Direction</label>
+      <div class="toggle2">
+        <div class="opt buy active" id="optBuy">▲ BUY (Long)</div>
+        <div class="opt sell" id="optSell">▼ SELL (Short)</div>
       </div>
     </div>
+    </div><!-- /calc-col -->
 
-    <!-- GUARD TAB -->
-    <div id="tab-guard" style="display:none;">
-      <div class="panel">
-        <h2>Daily Risk Guard Settings</h2>
+    <div class="calc-col">
+    <div class="card">
+      <h2>Trade Levels</h2>
+      <div class="row">
+        <div>
+          <label>Entry Price</label>
+          <input type="number" id="entry" placeholder="e.g. 2400.0" step="any">
+        </div>
+        <div>
+          <label>Stop Loss Price</label>
+          <input type="number" id="stop" placeholder="e.g. 2395.0" step="any">
+        </div>
+      </div>
+
+      <label>Target R:R (single-target mode)</label>
+      <div class="rr-group">
+        <div class="pill active" data-rr="1">1:1</div>
+        <div class="pill" data-rr="1.5">1:1.5</div>
+        <div class="pill" data-rr="2">1:2</div>
+        <div class="pill" data-rr="3">1:3</div>
+        <div class="pill" data-rr="4">1:4</div>
+      </div>
+
+      <label class="mt checkbox-row">
+        <input type="checkbox" id="partialMode"> Enable partial exits (split target into 2 legs)
+      </label>
+      <div id="partialFields" class="hidden">
         <div class="row">
-          <div class="field"><label>Max Daily Loss ($)</label><input type="number" id="maxDailyLoss" value="80"></div>
-          <div class="field"><label>Max Trades / Day</label><input type="number" id="maxTrades" value="5"></div>
+          <div>
+            <label>Leg 1 R:R</label>
+            <input type="number" id="rr1" value="1" step="any">
+          </div>
+          <div>
+            <label>Leg 1 % of position</label>
+            <input type="number" id="rr1pct" value="50" step="any">
+          </div>
         </div>
-        <p style="color:var(--sub); font-size:12px; margin-top:10px;">Based on today's journal entries. Once either limit is breached, the STOP TRADING banner activates across the app.</p>
-      </div>
-
-      <div class="panel" style="margin-top:20px; border-color:var(--red);">
-        <h2 style="color:var(--red);">Danger Zone</h2>
-        <p style="color:var(--sub); font-size:12px; margin-bottom:14px;">Wipes everything stored on this device — calculator settings, firm selection, and the full trade journal. Cannot be undone. Export your journal first if you want a backup.</p>
-        <button class="ghost" id="resetAllBtn" style="color:var(--red); border-color:var(--red);">Reset All Data</button>
+        <div class="row">
+          <div>
+            <label>Leg 2 R:R</label>
+            <input type="number" id="rr2" value="2" step="any">
+          </div>
+          <div>
+            <label>Leg 2 % of position</label>
+            <input type="number" id="rr2pct" value="50" step="any">
+          </div>
+        </div>
       </div>
     </div>
 
-  </main>
-  <div class="footer-note">All data stored locally on this device. No account, no server, no external calls after first load.</div>
-  <div class="live-pl-widget">
-    <div class="lbl">Live Potential P&amp;L</div>
-    <div class="vals"><span id="livePLProfit" style="color:var(--green);">-</span> / <span id="livePLLoss" style="color:var(--red);">-</span></div>
-  </div>
-</div>
-
-<script>
-(function(){
-  "use strict";
-
-  // ---------- Prop Firm Presets ----------
-  const FIRMS = {
-    "5ers": {label:"The 5%ers", maxDailyLossPct:4, maxTrades:0, note:"Daily loss ~4% of starting balance (varies by plan)."},
-    "tradiefy": {label:"Tradiefy", maxDailyLossPct:4, maxTrades:0, note:"Check current Tradiefy daily loss rules; defaulted conservatively."},
-    "apex": {label:"Apex", maxDailyLossPct:0, maxTrades:0, note:"Apex uses trailing drawdown, not a fixed daily loss cap; use guard as a personal limit."},
-    "lucid": {label:"Lucid Trading", maxDailyLossPct:4, maxTrades:0, note:"Check current Lucid daily loss rules; defaulted conservatively."}
-  };
-  let currentFirm = "5ers";
-
-  const DOLLAR_PRESETS = [
-    {label:"MNQ $2/pt", value:2},
-    {label:"MES $1.25/pt", value:1.25},
-    {label:"MYM $0.50/pt", value:0.5},
-    {label:"M2K $0.50/pt", value:0.5}
-  ];
-  const RISK_PRESETS = [0.25, 0.5, 1, 1.5, 2];
-
-  const $ = id => document.getElementById(id);
-  const fmt = n => isFinite(n) ? n.toLocaleString(undefined,{maximumFractionDigits:2, minimumFractionDigits:2}) : "-";
-  const fmtMoney = n => (n<0? "-$":"$") + Math.abs(n).toLocaleString(undefined,{maximumFractionDigits:2, minimumFractionDigits:2});
-
-  // ---------- Ticker ----------
-  const tickerItems = ["MNQ · Micro Nasdaq-100", "MES · Micro S&P 500", "MYM · Micro Dow", "M2K · Micro Russell 2000", "GC · Gold", "MGC · Micro Gold", "6E · Euro FX", "CL · Crude Oil"];
-  $("tickerTrack").innerHTML = tickerItems.map(t=>`<span><b>${t.split(' · ')[0]}</b> ${t.split(' · ')[1]}</span>`).join("") + tickerItems.map(t=>`<span><b>${t.split(' · ')[0]}</b> ${t.split(' · ')[1]}</span>`).join("");
-
-  // ---------- Firm selector ----------
-  function renderFirms(){
-    $("firmSelect").innerHTML = Object.keys(FIRMS).map(k=>
-      `<button class="firm-btn ${k===currentFirm?'active':''}" data-firm="${k}">${FIRMS[k].label}</button>`
-    ).join("");
-    document.querySelectorAll(".firm-btn").forEach(b=>{
-      b.onclick = ()=>{
-        currentFirm = b.dataset.firm;
-        renderFirms();
-        applyFirmDefaults();
-      };
-    });
-  }
-  function applyFirmDefaults(){
-    const f = FIRMS[currentFirm];
-    if(f.maxDailyLossPct>0){
-      const cap = parseFloat($("capital").value)||2000;
-      $("maxDailyLoss").value = (cap*f.maxDailyLossPct/100).toFixed(2);
-    }
-    renderGuard();
-  }
-
-  // ---------- Presets ----------
-  const RR_PRESETS = [1, 1.5, 2, 3, 4];
-  let selectedRR = 1.5;
-  function renderRRPresets(){
-    $("rrPresets").innerHTML = RR_PRESETS.map(r=>`<button class="preset-btn ${r===selectedRR?'active':''}" data-rr="${r}">1:${r}</button>`).join("");
-    document.querySelectorAll("#rrPresets .preset-btn").forEach(b=>{
-      b.onclick = ()=>{
-        selectedRR = parseFloat(b.dataset.rr);
-        renderRRPresets();
-        calc();
-      };
-    });
-  }
-  function renderRiskPresets(){
-    $("riskPresets").innerHTML = RISK_PRESETS.map(r=>`<button class="preset-btn" data-r="${r}">${r}%</button>`).join("");
-    document.querySelectorAll("#riskPresets .preset-btn").forEach(b=>{
-      b.onclick = ()=>{ $("riskPct").value = b.dataset.r; calc(); };
-    });
-  }
-  function renderDollarPresets(){
-    $("dollarPresets").innerHTML = DOLLAR_PRESETS.map(p=>`<button class="preset-btn" data-v="${p.value}">${p.label}</button>`).join("");
-    document.querySelectorAll("#dollarPresets .preset-btn").forEach(b=>{
-      b.onclick = ()=>{ $("dollarPerPoint").value = b.dataset.v; calc(); };
-    });
-  }
-
-  // ---------- Long/Short toggle ----------
-  let direction = "long";
-  $("btnLong").onclick = ()=>{ direction="long"; $("btnLong").classList.add("active"); $("btnShort").classList.remove("active"); calc(); };
-  $("btnShort").onclick = ()=>{ direction="short"; $("btnShort").classList.add("active"); $("btnLong").classList.remove("active"); calc(); };
-
-  // ---------- Partial close legs ----------
-  let legs = [{pct:50, rMultiple:1}, {pct:50, rMultiple:2}];
-  function renderLegs(){
-    $("partialLegs").innerHTML = legs.map((l,i)=>`
-      <div class="row" data-i="${i}">
-        <div class="field"><label>Close % at leg ${i+1}</label><input type="number" class="legPct" data-i="${i}" value="${l.pct}"></div>
-        <div class="field"><label>At R-multiple</label><input type="number" class="legR" data-i="${i}" value="${l.rMultiple}" step="0.5"></div>
+    <div class="card">
+      <h2>Results</h2>
+      <div class="highlight">
+        <div class="lotval" id="outLots">0.00</div>
+        <div class="sub">Lots / Contracts to trade</div>
       </div>
-    `).join("");
-    document.querySelectorAll(".legPct").forEach(el=> el.oninput = e=>{ legs[e.target.dataset.i].pct = parseFloat(e.target.value)||0; });
-    document.querySelectorAll(".legR").forEach(el=> el.oninput = e=>{ legs[e.target.dataset.i].rMultiple = parseFloat(e.target.value)||0; });
-  }
-  $("addLeg").onclick = ()=>{ legs.push({pct:0, rMultiple:legs.length+1}); renderLegs(); };
+      <div class="results">
+        <div class="result-row"><span>Risk Amount</span><span class="val" id="outRiskAmt">$0.00</span></div>
+        <div class="result-row"><span>Stop Distance</span><span class="val" id="outStopDist">0.00 pts</span></div>
+        <div class="result-row"><span>Point Value / lot</span><span class="val" id="outPtVal">$0.00</span></div>
+        <div class="result-row"><span>Target Price</span><span class="val" id="outTarget">-</span></div>
+        <div class="result-row"><span>Target Distance</span><span class="val" id="outTargetDist">0.00 pts</span></div>
+        <div class="result-row"><span>Potential Loss</span><span class="val neg" id="outLoss">$0.00</span></div>
+        <div class="result-row"><span>Potential Profit</span><span class="val pos" id="outProfit">$0.00</span></div>
+        <div class="result-row"><span>Breakeven Move (after fees)</span><span class="val" id="outBE">0.00 pts</span></div>
+      </div>
 
-  // ---------- Core calc ----------
-  function calc(){
-    const capital = parseFloat($("capital").value)||0;
-    const riskPct = parseFloat($("riskPct").value)||0;
-    const entry = parseFloat($("entry").value)||0;
-    const stop = parseFloat($("stop").value)||0;
-    const dpp = parseFloat($("dollarPerPoint").value)||0;
-    const slip = parseFloat($("slippage").value)||0;
-    const commission = parseFloat($("commission").value)||0;
-    const marginPerContract = parseFloat($("marginPerContract").value)||0;
-
-    const riskDollars = capital * (riskPct/100);
-    const rawStopDist = Math.abs(entry - stop);
-    const effectiveStopDist = rawStopDist + slip; // slippage feeds sizing
-
-    let lotsRaw = 0;
-    if(effectiveStopDist>0 && dpp>0){
-      lotsRaw = riskDollars / (effectiveStopDist*dpp + commission);
-    }
-    const lots = Math.max(0, Math.floor(lotsRaw));
-
-    const potLoss = lots*(effectiveStopDist*dpp + commission);
-    const effRiskPct = capital>0 ? (potLoss/capital*100) : 0;
-
-    // target uses the selected R:R ratio (default 1:1.5)
-    const targetDistSel = rawStopDist*selectedRR;
-    const targetPriceSel = direction==="long" ? entry+targetDistSel : entry-targetDistSel;
-    const potProfitSel = lots*targetDistSel*dpp - lots*commission;
-
-    const marginReq = lots*marginPerContract;
-    const freeMargin = capital - marginReq;
-
-    $("lotOut").textContent = lots;
-    $("rrLabel").textContent = "(1:"+selectedRR+")";
-    $("stopDist").textContent = rawStopDist.toFixed(2)+" pts";
-    $("targetPrice").textContent = fmt(targetPriceSel);
-    $("targetDist").textContent = targetDistSel.toFixed(2)+" pts";
-    $("potLoss").textContent = fmtMoney(-Math.abs(potLoss));
-    $("potProfit").textContent = fmtMoney(Math.abs(potProfitSel));
-    $("marginReq").textContent = fmtMoney(marginReq);
-    $("freeMargin").textContent = fmtMoney(freeMargin);
-    $("effRisk").textContent = effRiskPct.toFixed(2)+"%";
-    $("rawLots").textContent = lotsRaw.toFixed(3);
-
-    $("livePLProfit").textContent = fmtMoney(Math.abs(potProfitSel));
-    $("livePLLoss").textContent = fmtMoney(-Math.abs(potLoss));
-
-    const band = $("riskBand");
-    if(effRiskPct<2){ band.className="risk-band risk-green"; band.textContent="LOW RISK — "+effRiskPct.toFixed(2)+"% of capital"; }
-    else if(effRiskPct<=3){ band.className="risk-band risk-yellow"; band.textContent="MODERATE RISK — "+effRiskPct.toFixed(2)+"% of capital"; }
-    else { band.className="risk-band risk-red"; band.textContent="HIGH RISK — "+effRiskPct.toFixed(2)+"% of capital"; }
-
-    // R:R table — includes 1:1.5 as the primary trading ratio
-    let rows = "";
-    RR_PRESETS.forEach(r=>{
-      const dist = rawStopDist*r;
-      const px = direction==="long" ? entry+dist : entry-dist;
-      const profit = lots*dist*dpp - lots*commission;
-      const highlight = r===selectedRR ? 'style="background:rgba(255,255,255,.04);"' : '';
-      rows += `<tr ${highlight}><td>1:${r}</td><td>${fmt(px)}</td><td>${dist.toFixed(2)} pts</td><td class="pos" style="color:var(--green)">${fmtMoney(profit)}</td></tr>`;
-    });
-    $("rrTable").innerHTML = rows;
-
-    saveSettings();
-  }
-
-  document.querySelectorAll("#tab-risk input").forEach(el=> el.addEventListener("input", calc));
-
-  // ---------- Tabs ----------
-  document.querySelectorAll(".tab").forEach(t=>{
-    t.onclick = ()=>{
-      document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
-      t.classList.add("active");
-      ["risk","journal","guard"].forEach(name=>{
-        $("tab-"+name).style.display = (name===t.dataset.tab)? "block":"none";
-      });
-      if(t.dataset.tab==="journal"){ renderJournal(); }
-      if(t.dataset.tab==="guard"){ renderGuard(); }
-    };
-  });
-
-  // ---------- Journal ----------
-  function loadJournal(){ try{ return JSON.parse(localStorage.getItem("mnq_journal")||"[]"); }catch(e){ return []; } }
-  function saveJournal(j){ localStorage.setItem("mnq_journal", JSON.stringify(j)); }
-
-  $("logTradeBtn").onclick = ()=>{
-    const j = loadJournal();
-    const entry = parseFloat($("entry").value)||0;
-    const stop = parseFloat($("stop").value)||0;
-    const targetTxt = $("targetPrice").textContent;
-    j.push({
-      id: "t"+Date.now()+Math.random().toString(36).slice(2,7),
-      ts: new Date().toISOString(),
-      entry: entry,
-      stop: stop,
-      target: parseFloat(targetTxt.replace(/,/g,""))||0,
-      lots: parseInt($("lotOut").textContent)||0,
-      rr: selectedRR,
-      direction: direction,
-      notes: $("setupNotes").value.trim(),
-      result: "pending",
-      pl: 0
-    });
-    saveJournal(j);
-    $("setupNotes").value = "";
-    renderJournal();
-    renderGuard();
-  };
-
-  $("addTradeBtn").onclick = ()=>{
-    const j = loadJournal();
-    j.push({
-      id: "t"+Date.now()+Math.random().toString(36).slice(2,7),
-      ts: new Date().toISOString(),
-      entry: parseFloat($("jEntry").value)||0,
-      stop: parseFloat($("jStop").value)||0,
-      target: null,
-      lots: null,
-      rr: null,
-      direction: $("jDirection").value,
-      notes: "",
-      result: "pending",
-      pl: parseFloat($("jPL").value)||0
-    });
-    saveJournal(j);
-    $("jEntry").value=""; $("jStop").value=""; $("jPL").value="";
-    renderJournal();
-    renderGuard();
-  };
-
-  $("exportBtn").onclick = ()=>{
-    const j = loadJournal();
-    const blob = new Blob([JSON.stringify(j,null,2)], {type:"application/json"});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url; a.download = "mnq-journal-export.json"; a.click();
-    URL.revokeObjectURL(url);
-  };
-
-  $("clearBtn").onclick = ()=>{
-    if(confirm("Clear the entire trade journal? This cannot be undone (export first if you want a backup).")){
-      saveJournal([]);
-      renderJournal();
-      renderGuard();
-    }
-  };
-
-  const resetAllBtn = document.getElementById("resetAllBtn");
-  if(resetAllBtn){
-    resetAllBtn.onclick = ()=>{
-      if(confirm("Reset ALL data on this device? This wipes your calculator settings AND the entire trade journal, and cannot be undone.")){
-        if(confirm("Are you absolutely sure? This is your last chance to cancel.")){
-          localStorage.clear();
-          location.reload();
-        }
-      }
-    };
-  }
-
-  $("filterResult").onchange = renderJournal;
-  $("filterDate").oninput = renderJournal;
-
-  function setTradeResult(id, result){
-    const j = loadJournal();
-    const t = j.find(x=>x.id===id);
-    if(!t) return;
-    if(result!=="pl-only"){ t.result = result; }
-    if(result==="cancelled" || result==="be"){ t.pl = t.pl||0; }
-    saveJournal(j);
-    renderJournal();
-    renderGuard();
-  }
-
-  function updateTradePL(id, val){
-    const j = loadJournal();
-    const t = j.find(x=>x.id===id);
-    if(!t) return;
-    t.pl = parseFloat(val)||0;
-    saveJournal(j);
-    renderGuard();
-    // re-render stats/equity without losing focus on the field the user is typing in
-    renderJournalStatsOnly();
-  }
-
-  function editTradeNotes(id){
-    const j = loadJournal();
-    const t = j.find(x=>x.id===id);
-    if(!t) return;
-    const n = prompt("Edit notes for this trade:", t.notes||"");
-    if(n!==null){ t.notes = n; saveJournal(j); renderJournal(); }
-  }
-
-  function markMovedToBE(id){
-    const j = loadJournal();
-    const t = j.find(x=>x.id===id);
-    if(!t) return;
-    t.movedToBE = !t.movedToBE;
-    saveJournal(j);
-    renderJournal();
-  }
-
-  function deleteTradeRow(id){
-    if(!confirm("Delete this entry?")) return;
-    let j = loadJournal();
-    j = j.filter(x=>x.id!==id);
-    saveJournal(j);
-    renderJournal();
-    renderGuard();
-  }
-
-  function resultBadgeClass(r){
-    if(r==="win") return "win"; if(r==="loss") return "loss"; if(r==="be") return "be";
-    if(r==="cancelled") return "cancelled"; return "pending";
-  }
-
-  function renderJournal(){
-    let j = loadJournal();
-    let needsSave = false;
-    j.forEach(t=>{ if(!t.id){ t.id = "t"+Date.now()+Math.random().toString(36).slice(2,7); needsSave=true; } });
-    if(needsSave) saveJournal(j);
-
-    const fr = $("filterResult").value;
-    const fd = $("filterDate").value.trim();
-    let filtered = j.filter(t=>{
-      if(fr!=="all" && t.result!==fr) return false;
-      if(fd && !t.ts.startsWith(fd)) return false;
-      return true;
-    });
-
-    $("journalCards").innerHTML = filtered.slice().reverse().map((t)=>{
-      const dirLabel = t.direction==="short" ? "SHORT" : "LONG";
-      const dirClass = t.direction==="short" ? "short" : "long";
-      const plColor = (t.pl||0)>=0 ? "var(--green)" : "var(--red)";
-      const targetLine = t.target ? `Entry ${t.entry} &rarr; Target ${t.target}` : `Entry ${t.entry||"-"} &rarr; Stop ${t.stop||"-"}`;
-      const rrLine = t.rr ? ` &middot; ${t.lots||0} lots &middot; 1:${t.rr}` : (t.lots? ` &middot; ${t.lots} lots` : "");
-      return `<div class="trade-card">
-        <div class="tc-top">
-          <div>
-            <div class="tc-badges">
-              <span class="badge ${dirClass}">${dirLabel}</span>
-              <span class="badge ${resultBadgeClass(t.result)}">${t.result.toUpperCase()}</span>
-              ${t.movedToBE? '<span class="badge be">MOVED-TO-BE</span>' : ''}
-            </div>
-            <div class="tc-meta">${new Date(t.ts).toLocaleString()} &middot; ${targetLine}${rrLine}</div>
-          </div>
-          <div class="tc-right">
-            <div class="tc-pl" style="color:${plColor};">${fmtMoney(t.pl||0)}</div>
-          </div>
+      <div id="partialResults" class="hidden">
+        <h3 class="subhead">Partial Exit Plan</h3>
+        <div class="results">
+          <div class="result-row"><span>Leg 1 Target / Lots</span><span class="val" id="outLeg1">-</span></div>
+          <div class="result-row"><span>Leg 1 Profit</span><span class="val pos" id="outLeg1Profit">$0.00</span></div>
+          <div class="result-row"><span>Leg 2 Target / Lots</span><span class="val" id="outLeg2">-</span></div>
+          <div class="result-row"><span>Leg 2 Profit</span><span class="val pos" id="outLeg2Profit">$0.00</span></div>
         </div>
-        ${t.notes? `<div class="tc-notes">${t.notes}</div>` : ''}
-        <div class="tc-actions">
-          <button class="tc-btn win" onclick="window.__setResult('${t.id}','win')">WIN</button>
-          <button class="tc-btn loss" onclick="window.__setResult('${t.id}','loss')">LOSS</button>
-          <button class="tc-btn be" onclick="window.__setResult('${t.id}','be')">BREAK EVEN</button>
-          <button class="tc-btn cancelled" onclick="window.__setResult('${t.id}','cancelled')">CANCELLED</button>
-          <input type="number" placeholder="P/L $" value="${t.pl||''}" style="width:80px; padding:5px 8px; font-size:11px; border-radius:6px; border:1px solid var(--border); background:#0c1119; color:var(--text);" onchange="window.__setPL('${t.id}', this.value)">
-          <button class="tc-btn ghostsm" onclick="window.__editNotes('${t.id}')">Edit Notes</button>
-          <button class="tc-btn ghostsm" onclick="window.__markBE('${t.id}')">Mark Moved-to-BE</button>
-          <button class="tc-btn del" onclick="window.__deleteTrade('${t.id}')">Delete</button>
-        </div>
-      </div>`;
-    }).join("") || `<div style="text-align:center; color:var(--sub); padding:30px 0;">No entries yet — log a setup from the Risk Calculator or add one manually above.</div>`;
+      </div>
 
-    renderJournalStatsOnly(j);
-  }
+      <h3 class="subhead">Multi-RR Snapshot (all targets at once)</h3>
+      <table class="rr-table" id="rrTable">
+        <thead><tr><th>R:R</th><th>Target</th><th>Profit</th></tr></thead>
+        <tbody></tbody>
+      </table>
 
-  window.__setResult = setTradeResult;
-  window.__setPL = updateTradePL;
-  window.__editNotes = editTradeNotes;
-  window.__markBE = markMovedToBE;
-  window.__deleteTrade = deleteTradeRow;
+      <label class="mt">Fees / Commission per round-turn ($, optional)</label>
+      <input type="number" id="fees" placeholder="e.g. 4.20" step="any" value="0">
 
-  function renderJournalStatsOnly(jArg){
-    const j = jArg || loadJournal();
-    const closed = j.filter(t=>t.result==="win"||t.result==="loss"||t.result==="be");
-    const wins = closed.filter(t=>t.result==="win").length;
-    const winRate = closed.length? (wins/closed.length*100):0;
-    const totalPL = closed.reduce((a,t)=>a+(t.pl||0),0);
-    // avg R: approximate using pl / (entry-stop distance*unit) -- simplified: pl / abs(entry-stop) if available
-    let rs = [];
-    closed.forEach(t=>{
-      const dist = Math.abs((t.entry||0)-(t.stop||0));
-      if(dist>0) rs.push((t.pl||0)/dist);
-    });
-    const avgR = rs.length? (rs.reduce((a,b)=>a+b,0)/rs.length) : 0;
+      <button class="primary" id="btnJournal">➕ Add to Journal</button>
+    </div>
+    </div><!-- /calc-col -->
+   </div><!-- /calc-grid -->
+  </section>
 
-    $("statWinRate").textContent = winRate.toFixed(1)+"%";
-    $("statAvgR").textContent = avgR.toFixed(2);
-    $("statTotalPL").textContent = fmtMoney(totalPL);
-    $("statCount").textContent = closed.length;
+  <!-- ============ JOURNAL TAB ============ -->
+  <section id="tab-journal" class="hidden">
+    <div class="card">
+      <h2>Trade Journal</h2>
+      <div class="row">
+        <input type="text" id="journalSearch" placeholder="Search notes / symbol...">
+        <select id="journalFilter">
+          <option value="all">All</option>
+          <option value="open">Open</option>
+          <option value="win">Wins</option>
+          <option value="loss">Losses</option>
+          <option value="be">Break-even</option>
+        </select>
+      </div>
+      <div id="journalList"><div class="empty">No trades logged yet.</div></div>
+      <div class="row mt">
+        <button class="secondary" id="btnExport">⬇ Export JSON</button>
+        <button class="secondary" id="btnExportCSV">⬇ Export CSV</button>
+      </div>
+      <div class="row">
+        <label class="file-label" for="importFile">⬆ Import JSON</label>
+        <input type="file" id="importFile" accept="application/json" class="hidden-file">
+        <button class="secondary danger" id="btnReset">🗑 Reset Journal</button>
+      </div>
+    </div>
+  </section>
 
-    drawEquityCurve(closed);
-  }
+  <!-- ============ STATS TAB ============ -->
+  <section id="tab-stats" class="hidden">
+    <div class="card">
+      <h2>Performance Summary</h2>
+      <div class="stat-grid">
+        <div class="stat-box"><div class="num" id="stTotal">0</div><div class="lbl">Total Trades</div></div>
+        <div class="stat-box"><div class="num" id="stWinRate">0%</div><div class="lbl">Win Rate</div></div>
+        <div class="stat-box"><div class="num" id="stAvgWin">$0</div><div class="lbl">Avg Win</div></div>
+        <div class="stat-box"><div class="num" id="stAvgLoss">$0</div><div class="lbl">Avg Loss</div></div>
+        <div class="stat-box"><div class="num" id="stNetPL">$0</div><div class="lbl">Net P/L</div></div>
+        <div class="stat-box"><div class="num" id="stAvgRR">0</div><div class="lbl">Avg R:R Used</div></div>
+        <div class="stat-box"><div class="num" id="stExpectancy">$0</div><div class="lbl">Expectancy / Trade</div></div>
+        <div class="stat-box"><div class="num" id="stProfitFactor">0</div><div class="lbl">Profit Factor</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Equity Curve</h2>
+      <canvas id="equityChart" width="320" height="180"></canvas>
+    </div>
+  </section>
 
-  function drawEquityCurve(closed){
-    const svg = $("equityCurve");
-    const w = 900, h = 160, pad = 10;
-    if(closed.length===0){ svg.innerHTML = `<text x="450" y="80" fill="#8a96a8" font-size="13" text-anchor="middle">No closed trades yet</text>`; return; }
-    let equity = 0;
-    const points = [0];
-    closed.forEach(t=>{ equity += (t.pl||0); points.push(equity); });
-    const min = Math.min(...points), max = Math.max(...points);
-    const range = (max-min)||1;
-    const stepX = (w-2*pad)/(points.length-1||1);
-    const coords = points.map((p,i)=>{
-      const x = pad + i*stepX;
-      const y = h-pad - ((p-min)/range)*(h-2*pad);
-      return [x,y];
-    });
-    const path = coords.map((c,i)=> (i===0?"M":"L")+c[0].toFixed(1)+","+c[1].toFixed(1)).join(" ");
-    const areaPath = path + ` L${coords[coords.length-1][0]},${h-pad} L${coords[0][0]},${h-pad} Z`;
-    svg.innerHTML = `
-      <defs>
-        <linearGradient id="eqGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="#00e5c7" stop-opacity="0.35"/>
-          <stop offset="100%" stop-color="#00e5c7" stop-opacity="0"/>
-        </linearGradient>
-      </defs>
-      <path d="${areaPath}" fill="url(#eqGrad)" stroke="none"/>
-      <path d="${path}" fill="none" stroke="#00e5c7" stroke-width="2.5">
-        <animate attributeName="stroke-dasharray" from="0,3000" to="3000,0" dur="1.1s" fill="freeze"/>
-      </path>
-    `;
-  }
+  <!-- ============ RISK GUARD TAB ============ -->
+  <section id="tab-risk" class="hidden">
+    <div class="card">
+      <h2>Daily Loss Limit Tracker</h2>
+      <label>Max Daily Loss ($ or %)</label>
+      <div class="row">
+        <input type="number" id="maxDailyLossVal" placeholder="e.g. 5" step="any">
+        <select id="maxDailyLossType">
+          <option value="pct">% of capital</option>
+          <option value="usd">$ fixed</option>
+        </select>
+      </div>
+      <label class="mt">Max Trades per Day</label>
+      <input type="number" id="maxTradesDay" placeholder="e.g. 5" step="1">
 
-  // ---------- Daily Risk Guard ----------
-  $("maxDailyLoss").addEventListener("input", renderGuard);
-  $("maxTrades").addEventListener("input", renderGuard);
+      <div class="highlight mt">
+        <div class="lotval" id="todayPL">$0.00</div>
+        <div class="sub">Today's realized P/L (from journal)</div>
+      </div>
+      <div class="results">
+        <div class="result-row"><span>Trades Today</span><span class="val" id="tradesToday">0</span></div>
+        <div class="result-row"><span>Daily Loss Limit</span><span class="val" id="dailyLimitVal">-</span></div>
+        <div class="result-row"><span>Remaining Buffer</span><span class="val" id="remainingBuffer">-</span></div>
+        <div class="result-row"><span>Status</span><span class="val" id="riskStatus">-</span></div>
+      </div>
+    </div>
+  </section>
 
-  function renderGuard(){
-    const j = loadJournal();
-    const today = new Date().toISOString().slice(0,10);
-    const todays = j.filter(t=> t.ts && t.ts.startsWith(today) && (t.result==="win"||t.result==="loss"||t.result==="be"));
-    const todayPL = todays.reduce((a,t)=>a+(t.pl||0),0);
-    const maxLoss = parseFloat($("maxDailyLoss").value)||0;
-    const maxTrades = parseFloat($("maxTrades").value)||0;
+  <!-- ============ SPECS TAB ============ -->
+  <section id="tab-specs" class="hidden">
+    <div class="card">
+      <h2>Contract Specifications</h2>
+      <table class="rr-table">
+        <thead><tr><th>Spec</th><th>GC</th><th>MGC</th></tr></thead>
+        <tbody>
+          <tr><td>Contract Size</td><td>100 oz</td><td>10 oz</td></tr>
+          <tr><td>Tick Size</td><td>$0.10</td><td>$0.10</td></tr>
+          <tr><td>Tick Value</td><td>$10.00</td><td>$1.00</td></tr>
+          <tr><td>Point Value ($1 move)</td><td>$100</td><td>$10</td></tr>
+          <tr><td>Exchange</td><td>COMEX</td><td>COMEX</td></tr>
+        </tbody>
+      </table>
+      <p class="note">Point value = price move of $1.00 × contract size. Always verify current specs and margin requirements with your broker — exchange specs can change.</p>
+    </div>
+  </section>
 
-    const lossHit = maxLoss>0 && todayPL <= -Math.abs(maxLoss);
-    const tradesHit = maxTrades>0 && todays.length >= maxTrades;
+</main>
 
-    const banner = $("guardBanner");
-    if(lossHit || tradesHit){
-      banner.className = "guard-banner guard-stop";
-      banner.innerHTML = `<span>🛑 STOP TRADING — ${lossHit? 'Daily loss limit hit ('+fmtMoney(todayPL)+')' : ''} ${tradesHit? 'Max trades/day reached ('+todays.length+'/'+maxTrades+')':''}</span><span>${FIRMS[currentFirm].label}</span>`;
-    } else {
-      banner.className = "guard-banner guard-ok";
-      banner.innerHTML = `<span>✅ Trading within limits — Today P/L: ${fmtMoney(todayPL)} · Trades: ${todays.length}${maxTrades?('/'+maxTrades):''}</span><span>${FIRMS[currentFirm].label}</span>`;
-    }
-  }
+<div id="toast" class="toast hidden"></div>
 
-  // ---------- Settings persistence ----------
-  function saveSettings(){
-    const s = {};
-    document.querySelectorAll("#tab-risk input").forEach(el=> s[el.id]=el.value);
-    s.direction = direction; s.firm = currentFirm; s.legs = legs;
-    localStorage.setItem("mnq_settings", JSON.stringify(s));
-  }
-  function loadSettings(){
-    try{
-      const s = JSON.parse(localStorage.getItem("mnq_settings")||"{}");
-      Object.keys(s).forEach(k=>{
-        const el = $(k);
-        if(el) el.value = s[k];
-      });
-      if(s.direction==="short"){ $("btnShort").click(); }
-      if(s.firm){ currentFirm = s.firm; }
-      if(s.legs){ legs = s.legs; }
-    }catch(e){}
-  }
-
-  // ---------- Init ----------
-  loadSettings();
-  renderFirms();
-  renderRRPresets();
-  renderRiskPresets();
-  renderDollarPresets();
-  renderLegs();
-  calc();
-  renderJournal();
-  renderGuard();
-
-  // Service worker registration
-  if("serviceWorker" in navigator){
-    window.addEventListener("load", ()=>{
-      navigator.serviceWorker.register("service-worker.js").catch(()=>{});
-    });
-  }
-})();
-</script>
+<script src="js/app.js"></script>
 </body>
 </html>
